@@ -59,7 +59,7 @@ func (u *User) Authenticate(password string) bool {
 }
 
 type User struct {
-	Username string   `storm:"id"`
+	Username string   `storm:"id,unique,index"`
 	Password Password `storm:"inline"`
 }
 

@@ -21,6 +21,6 @@ func (u *User) CheckOTP(otp string) bool {
 }
 
 type User struct {
-	Username string `storm:"id"`
+	Username string `storm:"id,unique,index"`
 	OTP      string
 }
