@@ -56,8 +56,8 @@ var LoginPage = `<html>
 func (h *AuthuwuHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, h.LoginPage)
 		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, h.LoginPage)
 		return
 	}
 	username := r.FormValue("username")
