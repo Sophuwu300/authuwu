@@ -16,16 +16,21 @@ func CloseDB() error {
 	return uwudb.Close()
 }
 
-func NewAuthuwuHandler(h http.Handler, cookieTime time.Duration) *AuthuwuHandler {
+func NewAuthuwuHandler(h http.Handler, cookieTime time.Duration, loginPage string) *AuthuwuHandler {
+	if loginPage == "" {
+		loginPage = LoginPage
+	}
 	return &AuthuwuHandler{
 		Handler:    h,
 		CookieTime: cookieTime,
+		LoginPage:  loginPage,
 	}
 }
 
 type AuthuwuHandler struct {
 	Handler    http.Handler
 	CookieTime time.Duration
+	LoginPage  string
 }
 
 // LoginPage is the HTML template for the login page. Should contain a form that submits to the login handler.
@@ -51,7 +56,7 @@ var LoginPage = `<html>
 func (h *AuthuwuHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, LoginPage)
+		fmt.Fprint(w, h.LoginPage)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
