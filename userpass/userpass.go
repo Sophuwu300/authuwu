@@ -68,13 +68,21 @@ func (u *User) String() string {
 }
 
 func NewUser(username string, password string) error {
-	u := &User{Username: username}
-	err := u.SetPassword(password)
+	var p Password
+	err := p.SetPassword(password)
 	if err != nil {
 		return err
 	}
-	err = db.AuthUwu.Save(u)
-	return err
+	u, _ := GetUser(username)
+	if u != nil && u.Username == username {
+		u.Password = p
+		return db.AuthUwu.Update(u)
+	}
+	u = &User{
+		Username: username,
+		Password: p,
+	}
+	return db.AuthUwu.Save(u)
 }
 
 func GetUser(username string) (*User, error) {
@@ -92,4 +100,29 @@ func UserAuth(username string, password string) (bool, error) {
 		return false, err
 	}
 	return u.Authenticate(password), nil
+}
+
+func GetUserList() ([]string, error) {
+	var users []*User
+	err := db.AuthUwu.All(&users)
+	if err != nil {
+		return nil, err
+	}
+	var userList []string
+	for _, u := range users {
+		if u.Username != "" {
+			userList = append(userList, u.Username)
+		}
+	}
+	return userList, nil
+}
+
+// DeleteUser deletes a user from the database
+func DeleteUser(username string) error {
+	u := &User{Username: username}
+	err := db.AuthUwu.DeleteStruct(u)
+	if err != nil {
+		return err
+	}
+	return nil
 }
