@@ -2,12 +2,16 @@ package db
 
 import (
 	"github.com/asdine/storm/v3"
+	"go.etcd.io/bbolt"
+	"time"
 )
 
 var AuthUwu *storm.DB
 
 func Open(path string) error {
-	db, err := storm.Open(path)
+	db, err := storm.Open(path, storm.BoltOptions(0660, &bbolt.Options{
+		Timeout: time.Second,
+	}))
 	if err != nil {
 		return err
 	}
