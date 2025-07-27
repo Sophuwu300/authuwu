@@ -1,8 +1,11 @@
 package cookie
 
 import (
+	"crypto/rand"
+	"errors"
 	"git.sophuwu.com/authuwu/db"
 	"git.sophuwu.com/authuwu/standard"
+	"github.com/asdine/storm/v3/q"
 	"net/http"
 	"time"
 )
@@ -17,18 +20,28 @@ func (c *Cookie) Encode() string {
 	return standard.NewEncoder().EncodeToString(c.Secret)
 }
 
-func random(len int) []byte {
+func random(len int) ([]byte, error) {
 	b := make([]byte, len)
-	return b
+	n, err := rand.Read(b)
+	if err != nil {
+		return nil, err
+	}
+	if n != len {
+		return nil, errors.New("failed to read enough random bytes")
+	}
+	return b, nil
 }
 
 func NewCookie(user string, expires time.Duration) (http.Cookie, error) {
-	b := random(standard.CookieLength)
+	b, err := random(standard.CookieLength)
+	if err != nil {
+		return http.Cookie{}, err
+	}
 	var c Cookie
 	c.Secret = b
 	c.User = user
 	c.Expires = time.Now().Add(expires)
-	err := db.AuthUwu.Save(&c)
+	err = db.AuthUwu.Save(&c)
 	if err != nil {
 		return http.Cookie{}, err
 	}
@@ -79,4 +92,28 @@ func DeleteCookie(r *http.Request) error {
 	var cookie Cookie
 	cookie.Secret = b
 	return db.AuthUwu.DeleteStruct(&cookie)
+}
+
+func PurgeExpiredCookies() error {
+	var cookies []Cookie
+	err := db.AuthUwu.Select(q.Lte("Expires", time.Now())).Find(&cookies)
+	if err != nil {
+		return err
+	}
+	for _, c := range cookies {
+		err = db.AuthUwu.DeleteStruct(&c)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetAllCookies() ([]Cookie, error) {
+	var cookies []Cookie
+	err := db.AuthUwu.All(&cookies)
+	if err != nil {
+		return nil, err
+	}
+	return cookies, nil
 }
